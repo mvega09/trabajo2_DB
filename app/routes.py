@@ -315,3 +315,74 @@ def list_reports():
     finally:
         cursor.close()
         conn.close()
+
+#1
+@router.get("/examenes/paciente/{id_paciente}")
+def get_examenes_paciente(id_paciente: int):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        query = """
+        SELECT e.id, e.fecha, e.tipo, m.nombre AS medico_nombre, m.apellido AS medico_apellido
+        FROM Examenes e
+        INNER JOIN Medicos m ON e.id_medico = m.id
+        WHERE e.id_paciente = %s
+        """
+        cursor.execute(query, (id_paciente,)) 
+        result = cursor.fetchall()
+        return result
+
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error al realizar la consulta")
+
+    finally:
+        cursor.close()
+        conn.close()
+
+#2
+@router.get("/examenes/medico/{id_medico}")
+def get_examenes_doctor(id_medico: int):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        query = """SELECT COUNT(*) AS total_examenes FROM Examenes WHERE id_medico = %s
+        """
+        cursor.execute(query, (id_medico,)) 
+        result = cursor.fetchall()
+        return result
+
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error al realizar la consulta")
+
+    finally:
+        cursor.close()
+        conn.close()
+
+#3
+@router.get("/examenes/medico/promedio/{id_medico}")
+def get_examenes_doctor(id_medico: int):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        query = """SELECT m.id AS id_medico, m.nombre, m.apellido, COUNT(e.id) / COUNT(DISTINCT e.fecha) AS promedio_examenes
+        FROM Examenes e
+        INNER JOIN Medicos m ON e.id_medico = m.id
+        WHERE m.id = %s
+        GROUP BY m.id, m.nombre, m.apellido;
+        """
+        cursor.execute(query, (id_medico,)) 
+        result = cursor.fetchall()
+        return result
+
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error al realizar la consulta")
+
+    finally:
+        cursor.close()
+        conn.close()
