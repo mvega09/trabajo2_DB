@@ -42,3 +42,11 @@ class Imagen(ImagenCreate):
     id: int
     id_examen: int
     fecha_creacion: datetime = Field(default_factory=datetime.now, description="Fecha de creación de la imagen")
+
+class Dianosticos(BaseModel):
+    descripcion: str = Field(..., description="diagnostico del paciente (campo requerido)")
+    fecha: date
+
+class Diagnostico(Dianosticos):
+    id: int
+    id_examen: int

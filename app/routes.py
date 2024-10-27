@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from app.models import PatientCreate, Patient, DoctorCreate, Doctor, ExamenCreate, Examen, ImagenCreate, Imagen
+from app.models import PatientCreate, Patient, DoctorCreate, Doctor, ExamenCreate, Examen, ImagenCreate, Imagen, Dianosticos, Diagnostico
 from app.database import get_db_connection
 from typing import List
 
@@ -188,6 +188,55 @@ def list_exams():
         cursor.execute(query)
         images = cursor.fetchall()
         return [Imagen(**image) for image in images]
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+@router.post("/Diagnostics/{id_examen}/", response_model=List[Diagnostico])
+def create_diagnostic_bulk(id_examen: int, diagnostics: List[Dianosticos]):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("SELECT * FROM examenes WHERE id = %s", (id_examen,))
+        if not cursor.fetchone():
+            raise HTTPException(status_code=404, detail="Examen no encontrado")
+        
+        created_diagnostics_path = []
+        for diagnostic in diagnostics:
+            query = """
+            INSERT INTO diagnosticos (id_examen, descripcion, fecha)
+            VALUES (%s, %s, %s)
+            """
+            values = (id_examen, diagnostic.descripcion, diagnostic.fecha)
+            
+            cursor.execute(query, values)
+            diagnostic_id = cursor.lastrowid
+            created_diagnostics_path.append(Diagnostico(id=diagnostic_id, id_examen=id_examen, **diagnostic.dict()))
+        
+        conn.commit()
+        return created_diagnostics_path
+    
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    finally:
+        cursor.close()
+        conn.close()
+
+@router.get("/Diagnostics/", response_model=list[Diagnostico])
+def list_Diagnostic():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        query = "SELECT * FROM diagnosticos"
+        cursor.execute(query)
+        diagnostics = cursor.fetchall()
+        return [Diagnostico(**diagnostic) for diagnostic in diagnostics]
     except Exception as e:
         print(f"Error occurred: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
