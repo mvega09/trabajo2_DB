@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from app.models import PatientCreate, Patient, DoctorCreate, Doctor
+from app.models import PatientCreate, Patient, DoctorCreate, Doctor, ExamenCreate, Examen
 from app.database import get_db_connection
 from typing import List
 
@@ -84,6 +84,60 @@ def list_doctors():
         cursor.execute(query)
         doctors = cursor.fetchall()
         return [Doctor(**doctor) for doctor in doctors]
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+
+@router.post("/Exams/{id_paciente}/{id_medico}/", response_model=List[Examen])
+def create_examenes_bulk(id_paciente: int, id_medico: int, examenes: List[ExamenCreate]):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("SELECT * FROM pacientes WHERE id = %s", (id_paciente,))
+        if not cursor.fetchone():
+            raise HTTPException(status_code=404, detail="Paciente no encontrado")
+        
+        cursor.execute("SELECT * FROM medicos WHERE id = %s", (id_medico,))
+        if not cursor.fetchone():
+            raise HTTPException(status_code=404, detail="Médico no encontrado")
+        
+        created_examenes = []
+        for examen in examenes:
+            query = """
+            INSERT INTO examenes (id_paciente, id_medico, fecha, tipo)
+            VALUES (%s, %s, %s, %s)
+            """
+            values = (id_paciente, id_medico, examen.fecha, examen.tipo)
+            
+            cursor.execute(query, values)
+            examen_id = cursor.lastrowid
+            created_examenes.append(Examen(id=examen_id, id_paciente=id_paciente, id_medico=id_medico, **examen.dict()))
+        
+        conn.commit()
+        return created_examenes
+    
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    finally:
+        cursor.close()
+        conn.close()
+
+@router.get("/Exams/", response_model=list[Examen])
+def list_exams():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        query = "SELECT * FROM examenes"
+        cursor.execute(query)
+        exams = cursor.fetchall()
+        return [Examen(**exam) for exam in exams]
     except Exception as e:
         print(f"Error occurred: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
