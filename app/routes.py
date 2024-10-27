@@ -50,3 +50,43 @@ def list_patients():
         cursor.close()
         conn.close()
 
+@router.post("/Doctors/", response_model=List[Doctor])
+def create_doctor(doctores: List[DoctorCreate]):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        query = """
+        INSERT INTO medicos (nombre, apellido, especialidad)
+        VALUES (%s, %s, %s)
+        """
+
+        values = [(doctor.nombre, doctor.apellido, doctor.especialidad) for doctor in doctores]
+        cursor.executemany(query, values)
+        conn.commit()
+        first_inserted_id = cursor.lastrowid
+        created_doctors = [
+            Doctor(id=first_inserted_id + idx, **doctor.dict())
+            for idx, doctor in enumerate(doctores)]
+        return created_doctors
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ocurrió un error al procesar la solicitud: {str(e)}")
+    finally:
+        cursor.close()
+        conn.close()
+
+@router.get("/Doctors/", response_model=list[Doctor])
+def list_doctors():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        query = "SELECT * FROM medicos"
+        cursor.execute(query)
+        doctors = cursor.fetchall()
+        return [Doctor(**doctor) for doctor in doctors]
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
