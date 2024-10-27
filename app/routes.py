@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from app.models import PatientCreate, Patient, DoctorCreate, Doctor, ExamenCreate, Examen, ImagenCreate, Imagen, Dianosticos, Diagnostico
+from app.models import PatientCreate, Patient, DoctorCreate, Doctor, ExamenCreate, Examen, ImagenCreate, Imagen, Dianosticos, Diagnostico, Reportes, Reporte
 from app.database import get_db_connection
 from typing import List
 
@@ -237,6 +237,78 @@ def list_Diagnostic():
         cursor.execute(query)
         diagnostics = cursor.fetchall()
         return [Diagnostico(**diagnostic) for diagnostic in diagnostics]
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+    
+
+@router.post("/Reports/{id_diagnostico}/{id_medico}/", response_model=List[Reporte])
+def create_report_bulk(id_diagnostico: int, id_medico: int, reports: List[Reportes]):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("SELECT * FROM diagnosticos WHERE id = %s", (id_diagnostico,))
+        if not cursor.fetchone():
+            raise HTTPException(status_code=404, detail="Diagnostico no encontrado")
+        
+        cursor.execute("SELECT * FROM medicos WHERE id = %s", (id_medico,))
+        if not cursor.fetchone():
+            raise HTTPException(status_code=404, detail="Médico no encontrado")
+        
+        created_report_path = []
+        for report in reports:
+            query = """
+            INSERT INTO reportes (id_diagnostico, id_medico, informe, fecha)
+            VALUES (%s, %s, %s, %s)
+            """
+            values = (id_diagnostico, id_medico, report.informe, report.fecha)
+            
+            cursor.execute(query, values)
+            report_id = cursor.lastrowid
+            created_report_path.append(Reporte(id=report_id, id_diagnostico=id_diagnostico, id_medico=id_medico, **report.dict()))
+        
+        conn.commit()
+        return created_report_path
+    
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    finally:
+        cursor.close()
+        conn.close()
+
+@router.get("/Reports/", response_model=list[Reporte])
+def list_Reports():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        query = "SELECT * FROM reportes"
+        cursor.execute(query)
+        reports = cursor.fetchall()
+        return [Reporte(**report) for report in reports]
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+
+@router.get("/Reports/", response_model=list[Reporte])
+def list_reports():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        query = "SELECT * FROM reportes"
+        cursor.execute(query)
+        reports = cursor.fetchall()
+        return [Examen(**report) for report in reports]
     except Exception as e:
         print(f"Error occurred: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
