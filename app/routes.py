@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from app.models import PatientCreate, Patient
+from app.models import PatientCreate, Patient, DoctorCreate, Doctor
 from app.database import get_db_connection
 from typing import List
 
