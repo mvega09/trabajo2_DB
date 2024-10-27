@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from app.models import PatientCreate, Patient, DoctorCreate, Doctor, ExamenCreate, Examen, ImagenCreate, Imagen, Dianosticos, Diagnostico, Reportes, Reporte
 from app.database import get_db_connection
 from typing import List
+from datetime import date
 
 router = APIRouter()
 
@@ -364,7 +365,7 @@ def get_examenes_doctor(id_medico: int):
 
 #3
 @router.get("/examenes/medico/promedio/{id_medico}")
-def get_examenes_doctor(id_medico: int):
+def get_examenes_doctor_count(id_medico: int):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
@@ -377,6 +378,32 @@ def get_examenes_doctor(id_medico: int):
         """
         cursor.execute(query, (id_medico,)) 
         result = cursor.fetchall()
+        return result
+
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error al realizar la consulta")
+
+    finally:
+        cursor.close()
+        conn.close()
+
+#4
+@router.get("/pacientes/medico/{id_medico}/lista/atendidos")
+def get_examenes_paciente_reciente(id_medico: int):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        query = """SELECT DISTINCT p.id, p.nombre, p.apellido
+        FROM Pacientes p
+        INNER JOIN Examenes e ON p.id = e.id_paciente
+        WHERE e.id_medico = %s;
+        """
+        cursor.execute(query, (id_medico,)) 
+        result = cursor.fetchall()  # Cambiado a fetchall para obtener todos los resultados
+        if not result:  # Cambiado para verificar si el resultado está vacío
+            raise HTTPException(status_code=404, detail="No se encontraron exámenes para el paciente")
         return result
 
     except Exception as e:
