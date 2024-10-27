@@ -50,3 +50,12 @@ class Dianosticos(BaseModel):
 class Diagnostico(Dianosticos):
     id: int
     id_examen: int
+
+class Reportes(BaseModel):
+    informe: str = Field(..., description="Informe del paciente")
+    fecha: date
+
+class Reporte(Reportes):
+    id: int
+    id_diagnostico: int
+    id_medico: int
