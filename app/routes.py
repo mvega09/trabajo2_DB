@@ -6,7 +6,7 @@ from typing import List
 router = APIRouter()
 
 @router.post("/Patients/", response_model=List[Patient])
-def create_patients(pacientes: List[PatientCreate]):
+def create_patients_bulk(pacientes: List[PatientCreate]):
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
@@ -51,7 +51,7 @@ def list_patients():
         conn.close()
 
 @router.post("/Doctors/", response_model=List[Doctor])
-def create_doctor(doctores: List[DoctorCreate]):
+def create_doctors_bulk(doctores: List[DoctorCreate]):
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
