@@ -24,3 +24,12 @@ class DoctorCreate(BaseModel):
 
 class Doctor(DoctorCreate):
     id: int
+
+class ExamenCreate(BaseModel):
+    fecha: date
+    tipo: str = Field(..., description="Tipo de examen (ej: Radiografía, Tomografía, Resonancia, Ecografia, etc.)")
+
+class Examen(ExamenCreate):
+    id: int
+    id_paciente: int
+    id_medico: int
