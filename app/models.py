@@ -17,3 +17,10 @@ class PatientCreate(BaseModel):
 class Patient(PatientCreate):
     id: int
 
+class DoctorCreate(BaseModel):
+    nombre: str = Field(..., description="Nombre del paciente (campo requerido)")
+    apellido: str = Field(..., description="Apellido del paciente (campo requerido)")
+    especialidad: str = Field(..., description="Especialidad del medico(campo requerido)")
+
+class Doctor(DoctorCreate):
+    id: int
