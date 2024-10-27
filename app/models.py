@@ -33,3 +33,12 @@ class Examen(ExamenCreate):
     id: int
     id_paciente: int
     id_medico: int
+
+class ImagenCreate(BaseModel):
+    ruta_imagen: str = Field(..., description="Ruta de la imagen (campo requerido)")
+    tipo_imagen: str = Field(default='DICOM', description="Tipo de imagen, por defecto DICOM")
+
+class Imagen(ImagenCreate):
+    id: int
+    id_examen: int
+    fecha_creacion: datetime = Field(default_factory=datetime.now, description="Fecha de creación de la imagen")
