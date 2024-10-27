@@ -401,8 +401,8 @@ def get_examenes_paciente_reciente(id_medico: int):
         WHERE e.id_medico = %s;
         """
         cursor.execute(query, (id_medico,)) 
-        result = cursor.fetchall()  # Cambiado a fetchall para obtener todos los resultados
-        if not result:  # Cambiado para verificar si el resultado está vacío
+        result = cursor.fetchall()
+        if not result:
             raise HTTPException(status_code=404, detail="No se encontraron exámenes para el paciente")
         return result
 
