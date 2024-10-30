@@ -420,7 +420,6 @@ def get_examenes_diagnosticos_paciente(id_paciente: int):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     try:
-        # Consulta corregida
         query = """
         SELECT e.id AS id_examen, e.fecha, e.tipo, d.descripcion AS diagnostico
         FROM Examenes e
