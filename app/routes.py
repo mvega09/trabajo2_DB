@@ -560,6 +560,33 @@ def get_ultima_imagen_examen(id_examen: int):
         cursor.close()
         conn.close()
 
+#11
+@router.get("/diagnosticos/reportes_medico")
+def get_diagnosticos_reportes_medico(nombre: str):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = """
+        SELECT 
+        d.id AS diagnostico_id, 
+        d.descripcion AS diagnostico_descripcion,
+        r.informe AS reporte_informe, 
+        m.nombre AS medico_nombre, 
+        m.apellido AS medico_apellido
+        FROM Diagnosticos d
+        INNER JOIN Reportes r ON d.id = r.id_diagnostico
+        INNER JOIN Medicos m ON r.id_medico = m.id
+        WHERE m.nombre = %s;
+        """
+        cursor.execute(query, (nombre,))
+        result = cursor.fetchall()
+        return result
+    finally:
+        cursor.close()
+        conn.close()
+
+
+
 
 
 
