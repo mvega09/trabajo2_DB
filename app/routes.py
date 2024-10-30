@@ -413,3 +413,153 @@ def get_examenes_paciente_reciente(id_medico: int):
     finally:
         cursor.close()
         conn.close()
+
+#5
+@router.get("/paciente/{id_paciente}/examenes_diagnosticos")
+def get_examenes_diagnosticos_paciente(id_paciente: int):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # Consulta corregida
+        query = """
+        SELECT e.id AS id_examen, e.fecha, e.tipo, d.descripcion AS diagnostico
+        FROM Examenes e
+        INNER JOIN Diagnosticos d ON e.id = d.id_examen
+        WHERE e.id_paciente = %s;
+        """
+        cursor.execute(query, (id_paciente,))
+        results = cursor.fetchall()
+        return results
+    finally:
+        cursor.close()
+        conn.close()
+
+#6
+@router.get("/pacientes/promedio_edad_por_genero")
+def get_promedio_edad_por_genero():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = """
+        SELECT genero, AVG(TIMESTAMPDIFF(YEAR, fecha_nacimiento, CURDATE())) AS promedio_edad
+        FROM pacientes
+        GROUP BY genero
+        """
+        cursor.execute(query)
+        results = cursor.fetchall()
+        return results
+    finally:
+        cursor.close()
+        conn.close()
+
+#7
+@router.get("/paciente/{id_paciente}/diagnostico_mas_comun")
+def get_diagnostico_mas_comun(id_paciente: int):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = """
+        SELECT d.descripcion, COUNT(d.id) AS frecuencia
+        FROM Diagnosticos d
+        INNER JOIN Examenes e ON d.id_examen = e.id
+        WHERE e.id_paciente = %s
+        GROUP BY d.descripcion
+        ORDER BY frecuencia DESC
+        LIMIT 1
+        """
+        cursor.execute(query, (id_paciente,))
+        result = cursor.fetchone()
+        return result
+    finally:
+        cursor.close()
+        conn.close()
+
+#8
+@router.get("/paciente/max_examenes")
+def get_paciente_max_examenes():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = """
+        SELECT p.id, p.nombre, p.apellido, COUNT(e.id) AS total_examenes
+        FROM Pacientes p
+        LEFT JOIN Examenes e ON p.id = e.id_paciente
+        GROUP BY p.id
+        ORDER BY total_examenes DESC
+        LIMIT 1
+        """
+        cursor.execute(query)
+        result = cursor.fetchone()
+        return result
+    finally:
+        cursor.close()
+        conn.close()
+
+#9
+@router.get("/diagnosticos/reportes")
+def get_diagnosticos_reportes(diagnostico_id: int = None, medico_id: int = None):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = """
+        SELECT 
+            d.id AS diagnostico_id,
+            d.descripcion AS diagnostico_descripcion,
+            d.fecha AS diagnostico_fecha,
+            r.id AS reporte_id,
+            r.informe AS reporte_informe,
+            r.fecha AS reporte_fecha,
+            m.id AS medico_id,
+            m.nombre AS medico_nombre,
+            m.apellido AS medico_apellido,
+            m.especialidad AS medico_especialidad
+        FROM 
+            Diagnosticos d
+        JOIN 
+            Reportes r ON d.id = r.id_diagnostico
+        JOIN 
+            Medicos m ON r.id_medico = m.id
+        """
+        filters = []
+        if diagnostico_id is not None:
+            filters.append(f"d.id = {diagnostico_id}")
+        if medico_id is not None:
+            filters.append(f"m.id = {medico_id}")
+
+        if filters:
+            query += " WHERE " + " AND ".join(filters)
+        
+        query += " ORDER BY d.fecha DESC;"
+
+        cursor.execute(query)
+        result = cursor.fetchall()
+        return result
+    finally:
+        cursor.close()
+        conn.close()
+
+#10
+@router.get("/examen/{id_examen}/ultima_imagen")
+def get_ultima_imagen_examen(id_examen: int):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = """
+        SELECT i.fecha_creacion AS fecha_ultima_imagen, i.ruta_imagen, i.tipo_imagen
+        FROM Imagenes i
+        WHERE i.id_examen = %s
+        ORDER BY i.fecha_creacion DESC
+        LIMIT 1
+        """
+        cursor.execute(query, (id_examen,))
+        result = cursor.fetchone()
+        if result is None:
+            return {"error": "No se encontró ninguna imagen para el examen proporcionado."}, 404
+        return result
+    finally:
+        cursor.close()
+        conn.close()
+
+
+
+
