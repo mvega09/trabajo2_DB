@@ -585,7 +585,74 @@ def get_diagnosticos_reportes_medico(nombre: str):
         cursor.close()
         conn.close()
 
+#12
+@router.get("/examenes/por_especialidad")
+def get_examenes_por_especialidad(especialidad: str):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = """
+        SELECT 
+        m.especialidad, 
+        COUNT(e.id) AS total_examenes
+        FROM Medicos m
+        INNER JOIN Examenes e ON m.id = e.id_medico
+        WHERE m.especialidad = %s
+        GROUP BY m.especialidad;
+        """
+        cursor.execute(query, (especialidad,))
+        result = cursor.fetchall()
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="No se encontraron exámenes para la especialidad especificada")
+        
+        return result
+    finally:
+        cursor.close()
+        conn.close()
 
+#13
+@router.get("/pacientes/{id_paciente}/diagnosticos_recientes")
+def get_diagnosticos_recientes_paciente(id_paciente: int):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = """
+        SELECT 
+            d.id AS diagnostico_id, 
+            d.descripcion AS diagnostico_descripcion, 
+            d.fecha AS fecha_diagnostico
+        FROM Diagnosticos d
+        INNER JOIN Examenes e ON d.id_examen = e.id
+        WHERE e.id_paciente = %s AND d.fecha >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH);
+        """
+        cursor.execute(query, (id_paciente,))
+        result = cursor.fetchall()
+        return result
+    finally:
+        cursor.close()
+        conn.close()
+
+#14
+@router.get("/imagenes/por_tipo_examen")
+def get_imagenes_por_tipo_examen():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = """
+        SELECT 
+            e.tipo AS tipo_examen, 
+            COUNT(i.id) AS total_imagenes
+        FROM Examenes e
+        LEFT JOIN Imagenes i ON e.id = i.id_examen
+        GROUP BY e.tipo;
+        """
+        cursor.execute(query)
+        result = cursor.fetchall()
+        return result
+    finally:
+        cursor.close()
+        conn.close()
 
 
 
