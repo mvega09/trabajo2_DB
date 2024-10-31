@@ -657,3 +657,4 @@ def get_imagenes_por_tipo_examen():
 
 
 
+
