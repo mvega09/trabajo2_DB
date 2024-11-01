@@ -653,7 +653,31 @@ def get_imagenes_por_tipo_examen():
         cursor.close()
         conn.close()
 
-
-
-
-
+#15
+@router.get("/medicos/reportes_mas_de_10")
+def get_medico_con_mas_de_10_reportes(id_medico: int):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = """
+        SELECT 
+            m.id AS medico_id, 
+            m.nombre, 
+            m.apellido, 
+            COUNT(r.id) AS total_reportes
+        FROM Medicos m
+        INNER JOIN Reportes r ON m.id = r.id_medico
+        WHERE m.id = %s
+        GROUP BY m.id, m.nombre, m.apellido
+        HAVING total_reportes >= 10;
+        """
+        cursor.execute(query, (id_medico,))
+        result = cursor.fetchall()
+        
+        if not result:
+            return {"message": "El médico especificado no tiene más de 10 reportes."}
+        
+        return result
+    finally:
+        cursor.close()
+        conn.close()
